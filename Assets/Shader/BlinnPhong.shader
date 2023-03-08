@@ -9,4 +9,19 @@ Shader "BlinnPhong"
         _Specular ("Specular", 2D) = "black" {}
         _Environment ("Environment", Cube) = "white"{}
     }
+    
+    SubShader
+    {
+        Tags 
+        {
+            "RenderType" = "Opaque"
+            "Queue" = "Geometry"
+        }
+        Pass
+        {
+            Tags {"LightMode" = "ForwardBase"}
+            CGPROGRAM
+            ENDCG
+        }
+    }
 }
