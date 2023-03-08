@@ -101,6 +101,12 @@ Shader "BlinnPhong"
             Tags {"LightMode" = "ForwardAdd" "Queue"="Geometry"}
             Blend One One // 가산 블렌딩 (이미 백 버퍼에 있는 색상과 그냥 더한다)
             CGPROGRAM
+            #pragma vertex vert
+            #pragma fragment frag
+            #include "UnityCG.cginc"
+            #include "AutoLight.cginc"
+            #pragma multi_compile_fwdbase
+            
             ENDCG
         }
     }
