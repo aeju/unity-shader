@@ -107,6 +107,20 @@ Shader "BlinnPhong"
             #include "AutoLight.cginc"
             #pragma multi_compile_fwdbase
             
+            struct vIN{
+                float4 vertex : POSITION;
+                float3 normal : NORMAL;
+                float3 tangent : TANGENT;
+                float2 uv : TEXCOORD0;
+            };
+            
+            struct vOUT{
+                float4 pos : SV_POSITION;
+                float3x3 tbn : TEXCOORD0;
+                float2 uv : TEXCOORD3;
+                float3 worldPos : TEXCOORD4;
+                LIGHTING_COORDS(5,6) // 두 슬롯 사용
+            }
             ENDCG
         }
     }
