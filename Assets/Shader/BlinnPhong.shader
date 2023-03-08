@@ -17,6 +17,7 @@ Shader "BlinnPhong"
             "RenderType" = "Opaque"
             "Queue" = "Geometry"
         }
+        // 기존 패스 
         Pass
         {
             Tags {"LightMode" = "ForwardBase"}
@@ -92,6 +93,14 @@ Shader "BlinnPhong"
                 
                 return float4( finalDiffuse + finalSpec + finalAmbient, 1.0);
             }
+            ENDCG
+        }
+        
+        // 새로운 패스 (멀티라이트 지원)
+        Pass {
+            Tags {"LightMode" = "ForwardAdd" "Queue"="Geometry"}
+            Blend One One // 가산 블렌딩 (이미 백 버퍼에 있는 색상과 그냥 더한다)
+            CGPROGRAM
             ENDCG
         }
     }
