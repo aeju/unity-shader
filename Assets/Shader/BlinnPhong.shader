@@ -21,6 +21,7 @@ Shader "BlinnPhong"
         Pass
         {
             Tags {"LightMode" = "ForwardBase"}
+            
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
@@ -100,12 +101,13 @@ Shader "BlinnPhong"
         Pass {
             Tags {"LightMode" = "ForwardAdd" "Queue"="Geometry"}
             Blend One One // 가산 블렌딩 (이미 백 버퍼에 있는 색상과 그냥 더한다)
+            
             CGPROGRAM
             #pragma vertex vert
             #pragma fragment frag
             #include "UnityCG.cginc"
             #include "AutoLight.cginc"
-            #pragma multi_compile_fwdbase
+            #pragma multi_compile_fwdadd
             
             struct vIN{
                 float4 vertex : POSITION;
@@ -120,14 +122,69 @@ Shader "BlinnPhong"
                 float2 uv : TEXCOORD3;
                 float3 worldPos : TEXCOORD4;
                 LIGHTING_COORDS(5,6) // 두 슬롯 사용
-            }
+            };
             
             vOUT vert(vIN v) {
                 vOUT o;
                 // 이 부분은 베이스 패스의 vert() 함수와 동일하다.
-                // 아래가 ForwardAdd 패스에서 추가된 코드다.
+                
+                o.pos = UnityObjectToClipPos(v.vertex);
+                o.uv = v.uv;
+                
+                float3 worldNormal = UnityObjectToWorldNormal(v.normal);
+                float3 worldTangent = UnityObjectToWorldDir(v.tangent.xyz);
+                float3 worldBitan = cross(worldNormal, worldTangent);
+                
+                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                o.tbn = float3x3( worldTangent, worldBitan, worldNormal);
+                            
+                // 아래가 ForwardAdd 패스에서 추가된 코드다. 
                 TRANSFER_VERTEX_TO_FRAGMENT(o);
                 return o;
+            }
+            
+            sampler2D _Normal;
+            sampler2D _Diffuse;
+            sampler2D _Specular;
+            samplerCUBE _Environment;
+            float4 _LightColor0;
+            
+            float4 frag(vOUT i) : SV_TARGET
+            {
+                // 일반 벡터
+                // Github 파일대로 수정
+                float3 unpackNormal = UnpackNormal(tex2D(_Normal, i.uv));
+                float3 nrm = normalize(mul(transpose(i.tbn), unpackNormal));
+                
+                //float3 unpackNormal = UnpackNormal(tex2D(_Normal, i.uv));
+                //float3 nrm = normalize(mul(unpackNormal, i.tbn));
+                float3 viewDir = normalize(_WorldSpaceCameraPos - i.worldPos);
+                float3 toLight = (_WorldSpaceLightPos0.xyz - i.worldPos.xyz);
+                float3 halfVec = normalize(viewDir + toLight);
+                float3 env = texCUBE(_Environment, reflect(-viewDir, nrm)).rgb;
+                float3 sceneLight = lerp(_LightColor0, env + _LightColor0 * 0.5, 0.5);
+                
+                float falloff = LIGHT_ATTENUATION(i); // 라이팅 감쇠 계산
+                
+                // 라이팅 계산
+                float diffAmt = max(dot(nrm, toLight), 0.0) * falloff;
+                float specAmt = max(0.0, dot(halfVec, nrm));
+                specAmt = pow(specAmt, 4.0) * falloff;
+                
+                // 여기서부터 마지막 줄까지는 베이스 패스와 같다.
+                //sample maps
+				float4 tex = tex2D(_Diffuse, i.uv);
+				float4 specMask = tex2D(_Specular, i.uv);                
+                
+                float3 specCol = specMask.rgb * specAmt;
+                
+                float3 finalDiffuse = sceneLight * diffAmt * tex.rgb;
+                float3 finalSpec = specCol * sceneLight;
+                
+                // ForwardAdd 패스에서는 앰비언트 라이팅을 더하지 않는다.
+                //float3 finalAmbient = UNITY_LIGHTMODEL_AMBIENT.rgb * tex.rgb;
+                                
+                return float4( finalDiffuse + finalSpec, 1.0);
             }
             ENDCG
         }
