@@ -39,6 +39,22 @@ Shader "BlinnPhong"
                 float2 uv : TEXCOORD3;
                 float3 worldPos : TEXCOORD4;
             };
+            
+            vOUT vert(vIN v)
+            {
+                vOUT o;
+                o.pos = UnityObjectToClipPos(v.vertex);
+                o.uv = v.uv;
+                
+                float3 worldNormal = UnityObjectToWorldNormal(v.normal);
+                float3 worldTangent = UnityObjectToWorldDir(v.tangent.xyz);
+                float3 worldBitan = cross(worldNormal, worldTangent);
+                
+                o.worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+                o.tbn = float3x3( worldTangent, worldBitan, worldNormal);
+                
+                return o;
+            }
             ENDCG
         }
     }
