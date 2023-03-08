@@ -55,6 +55,42 @@ Shader "BlinnPhong"
                 
                 return o;
             }
+            
+            sampler2D _Normal;
+            sampler2D _Diffuse;
+            sampler2D _Specular;
+            samplerCUBE _Environment;
+            float4 _LightColor0;
+            
+            float4 frag(vOUT i) : SV_TARGET
+            {
+                // 일반 벡터
+                float3 unpackNormal = unpackNormal(tex2D(_Normal, i.uv));
+                float3 nrm = normalize(mul(transpose(i.tbn), unpackNormal));
+                float3 viewDir = normalize(_WorldSpaceCameraPOS - i.worldPos);
+                float3 halfVec = normalize(viewDir + _WorldSpaceLightPos0.xyz);
+                float3 env = texCUBE(_Environment, reflect(-viewDir, nrm)).rgb;
+                float3 sceneLight = lerp(_LightColor0, env + _LightColor0 * 0.5, 0.5);
+                
+                // 라이팅 계산
+                float diffAmt = max(dot(nrm, _WorldSpaceCameraPOS.xyz), 0.0);
+                float specAmt = max(0.0, dot(halfVec, nrm));
+                specAmt = pow(specAmt, 4.0);
+                
+                // 텍스처 샘플링
+                float4 tex = tex2D(_Diffuse, i.uv);
+                float4 specMask = tex2D(_Specular, i.uv);
+                
+                // 스펙큘러 색상 계산
+                float3 specCol = specMask.rgb * specAmt;
+                
+                // 라이팅 결과를 합친다.
+                float3 finalDiffuse = sceneLight * diffAmt * tex.rgb;
+                float3 finalSpec = specCol * _sceneLight;
+                float3 finalAmbient = UNITY_LIGHTMODEL_AMBIENT.rgb * tex.rgb;
+                
+                return float4( finalDiffuse + finalSpec + finalAmbient, 1.0);
+            }
             ENDCG
         }
     }
