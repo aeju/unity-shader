@@ -16,6 +16,17 @@ Shader "Unlit/SolidColor"
             // 셰이더 코드가 여기에 온다.
             #pragma vertex vert
             #pragma fragment frag
+            
+            struct appdata
+            {
+                float4 vertex : POSITION;
+            };
+            
+            struct v2f
+            {
+                float4 vertex : SV_POSITION;
+            }
+            
             v2f vert (appdata v) 
             {
             // 버텍스 로직은 여기에 온다.
