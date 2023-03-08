@@ -34,9 +34,12 @@ Shader "Unlit/SolidColor"
             o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
             return o;
             }
+            
+            float4 _Color;
             float4 frag (v2f i) : SV_Target
             {
             // 프래그먼트 로직은 여기에 온다.
+            return _Color;
             }
             ENDCG
         }
