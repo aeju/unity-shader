@@ -121,6 +121,14 @@ Shader "BlinnPhong"
                 float3 worldPos : TEXCOORD4;
                 LIGHTING_COORDS(5,6) // 두 슬롯 사용
             }
+            
+            vOUT vert(vIN v) {
+                vOUT o;
+                // 이 부분은 베이스 패스의 vert() 함수와 동일하다.
+                // 아래가 ForwardAdd 패스에서 추가된 코드다.
+                TRANSFER_VERTEX_TO_FRAGMENT(o);
+                return o;
+            }
             ENDCG
         }
     }
