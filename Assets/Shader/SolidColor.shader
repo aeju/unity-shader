@@ -30,6 +30,9 @@ Shader "Unlit/SolidColor"
             v2f vert (appdata v) 
             {
             // 버텍스 로직은 여기에 온다.
+            v2f o;
+            o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+            return o;
             }
             float4 frag (v2f i) : SV_Target
             {
